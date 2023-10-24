@@ -20,6 +20,8 @@ public interface PackageService extends SuperService {
 
     PackageDTO updatePackage(PackageDTO packageDTO);
 
+    PackageDTO updateNotExpirePackage(PackageDTO packageDTO);
+
     void deletePackage(String packageId);
 
     List<PackageDTO> getPageablePackage(Integer page, Integer count);
@@ -41,4 +43,6 @@ public interface PackageService extends SuperService {
     ResponseUtil getUserByNic(String nic);
 
     List<GuideDTO> getFreeGuides(String startDate, String endDate);
+
+    List<PackageDTO> getPackageByUserNic(Integer page, Integer count, String nic);
 }

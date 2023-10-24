@@ -22,4 +22,7 @@ public interface PackageRepository extends JpaRepository<Package, String> {
 
     @Query(value = "from Package p")
     List<Package> getPackageHQLWithPageable(Pageable pageable);
+
+
+    List<Package> findAllByUserNic(String nic, Pageable pageable);
 }

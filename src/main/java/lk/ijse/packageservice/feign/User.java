@@ -11,12 +11,12 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @created Fri 1:06 PM on 10/20/2023
  * @project package-service
  **/
-@FeignClient("USER-SERVICE")
+@FeignClient("IDENTITY-SERVICE")
 public interface User {
 
-    @GetMapping(value = "nexttravel/api/v1/user/get", params = {"nic"}, produces = {MediaType.APPLICATION_JSON_VALUE})
+    @GetMapping(value = "nexttravel/api/v1/auth/user/get", params = {"nic"}, produces = {MediaType.APPLICATION_JSON_VALUE})
     ResponseUtil findByNic(@RequestParam("nic") String nic);
 
-    @GetMapping(value = "nexttravel/api/v1/user", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @GetMapping(value = "nexttravel/api/v1/auth/user", produces = {MediaType.APPLICATION_JSON_VALUE})
     ResponseUtil getAll();
 }

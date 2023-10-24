@@ -110,6 +110,17 @@ public class PackageController {
                 .build();
     }
 
+    @PutMapping(value = "/updateUserPackage",consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseUtil updateUserPackage(@RequestBody PackageDTO packageDTO){
+
+        return ResponseUtil
+                .builder()
+                .code(200)
+                .data(packageService.updateNotExpirePackage(packageDTO))
+                .message("Package update successful")
+                .build();
+    }
+
     @DeleteMapping(params = {"packageId"}, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseUtil updatePackage(@RequestParam String packageId){
 
@@ -153,4 +164,18 @@ public class PackageController {
                 .message("Package getting all successful")
                 .build();
     }
+    @GetMapping(value = "/getPackageByNic", params = {"page", "count", "nic"}, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseUtil getPackagesByUserNic(@RequestParam Integer page,
+                                             @RequestParam Integer count,
+                                             @RequestParam String nic){
+
+        System.out.println(page + count + nic);
+        return ResponseUtil
+                .builder()
+                .code(200)
+                .data(packageService.getPackageByUserNic(page, count, nic))
+                .message("User packages getting successful")
+                .build();
+    }
+
 }

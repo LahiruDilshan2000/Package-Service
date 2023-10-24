@@ -21,10 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.util.*;
 
 /**
  * @author Lahiru Dilshan
@@ -82,6 +80,28 @@ public class PackageServiceImpl implements PackageService {
 
         return modelMapper
                 .map(packageRepository.save(modelMapper.map(packageDTO, Package.class)), PackageDTO.class);
+    }
+
+    @Override
+    public PackageDTO updateNotExpirePackage(PackageDTO packageDTO) {
+
+        if (isUpdateTimeExpire(packageDTO.getBookedDate()))
+            throw new RuntimeException("Package update time is expire !");
+
+        return updatePackage(packageDTO);
+    }
+
+    private boolean isUpdateTimeExpire(Date bookedDate) {
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(bookedDate);
+
+        calendar.add(Calendar.HOUR_OF_DAY, 48);
+        Date expireDate = calendar.getTime();
+
+        Date nowDate = new Date();
+
+        return nowDate.toInstant().isAfter(expireDate.toInstant());
     }
 
     @Override
@@ -172,6 +192,17 @@ public class PackageServiceImpl implements PackageService {
 
 
         return freeList;
+    }
+
+    @Override
+    public List<PackageDTO> getPackageByUserNic(Integer page, Integer count, String nic) {
+
+        PageRequest pageRequest = PageRequest.of(page, count);
+
+        return modelMapper
+                .map(packageRepository.findAllByUserNic(nic, pageRequest),
+                        new TypeToken<List<PackageDTO>>(){}.getType());
+
     }
 
     private boolean isFree(List<GuideDatesDTO> dateList, String startDate, String endDate) {
