@@ -3,13 +3,16 @@ package lk.ijse.packageservice.service.custom.impl;
 import lk.ijse.packageservice.dto.GuideDTO;
 import lk.ijse.packageservice.dto.GuideDatesDTO;
 import lk.ijse.packageservice.dto.PackageDTO;
+import lk.ijse.packageservice.dto.PaymentDetailsDTO;
 import lk.ijse.packageservice.entity.Package;
+import lk.ijse.packageservice.entity.PaymentDetails;
 import lk.ijse.packageservice.exception.NotFoundException;
 import lk.ijse.packageservice.feign.Guide;
 import lk.ijse.packageservice.feign.Hotel;
 import lk.ijse.packageservice.feign.User;
 import lk.ijse.packageservice.feign.Vehicle;
 import lk.ijse.packageservice.repository.PackageRepository;
+import lk.ijse.packageservice.repository.PaymentDetailsRepository;
 import lk.ijse.packageservice.service.custom.PackageService;
 import lk.ijse.packageservice.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +21,12 @@ import org.modelmapper.TypeToken;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -46,6 +54,10 @@ public class PackageServiceImpl implements PackageService {
 
     private final ModelMapper modelMapper;
 
+    private final PaymentDetailsRepository paymentDetailsRepository;
+
+    private final String mainPath = "C:\\Images\\Package payment\\";
+
     @Override
     public String getNextPk() {
 
@@ -68,8 +80,17 @@ public class PackageServiceImpl implements PackageService {
         if (packageRepository.existsById(packageDTO.getPackageId()))
             throw new NotFoundException(packageDTO.getPackageId() + " Package already exist");
 
-        return modelMapper
-                .map(packageRepository.save(modelMapper.map(packageDTO, Package.class)), PackageDTO.class);
+        packageDTO.setPaidValue("Not payed");
+        PackageDTO dto = modelMapper.map(packageRepository.save(modelMapper.map(packageDTO, Package.class)), PackageDTO.class);
+
+        paymentDetailsRepository.save(PaymentDetails
+                .builder()
+                .packageId(packageDTO.getPackageId())
+                .status("Not payed")
+                .packageValue(packageDTO.getPackageValue())
+                .paidValue(0.0)
+                .build());
+        return dto;
     }
 
     @Override
@@ -110,7 +131,28 @@ public class PackageServiceImpl implements PackageService {
         if (!packageRepository.existsById(packageId))
             throw new NotFoundException(packageId + " Package doesn't exist");
 
+        PaymentDetails paymentDetails = paymentDetailsRepository.findByPackageId(packageId).get();
+        deleteExistingImg(paymentDetails.getSliImgPath());
+
+        File folder = new File(paymentDetails.getFolderPath());
+
+        if(!folder.delete())
+            throw new RuntimeException("Payment slip directory delete failed !");
+
         packageRepository.deleteById(packageId);
+        paymentDetailsRepository.deleteByPackageId(packageId);
+    }
+
+    private void deleteExistingImg(String imagePath) {
+
+        File oldFile = new File(imagePath);
+
+        if (!oldFile.exists()){
+            throw new NotFoundException("Existing payment slip is not found !");
+        }
+
+        if(!oldFile.delete())
+            throw new RuntimeException("Existing payment slip delete failed !");
     }
 
     @Override
@@ -120,7 +162,8 @@ public class PackageServiceImpl implements PackageService {
 
         return modelMapper
                 .map(packageRepository.getPackageHQLWithPageable(pageRequest),
-                        new TypeToken<List<PackageDTO>>(){}.getType());
+                        new TypeToken<List<PackageDTO>>() {
+                        }.getType());
     }
 
     @Override
@@ -201,8 +244,99 @@ public class PackageServiceImpl implements PackageService {
 
         return modelMapper
                 .map(packageRepository.findAllByUserNic(nic, pageRequest),
-                        new TypeToken<List<PackageDTO>>(){}.getType());
+                        new TypeToken<List<PackageDTO>>() {
+                        }.getType());
 
+    }
+
+    @Override
+    public void addPaymentSlip(String packageId, MultipartFile file) {
+
+        Optional<PaymentDetails> byPackageId = paymentDetailsRepository.findByPackageId(packageId);
+        if (byPackageId.isEmpty())
+            throw new NotFoundException(packageId + " Package is doesn't exist !");
+
+        try {
+
+            PaymentDetails paymentDetails = byPackageId.get();
+
+            if (paymentDetails.getSliImgPath() == null) {
+
+                String folderPath = mainPath + UUID.randomUUID();
+                File pathFile = new File(folderPath);
+                if (!pathFile.mkdir())
+                    throw new RuntimeException("Hotel Image directory create failed !");
+
+                String imagePth = folderPath + "\\" + file.getOriginalFilename();
+                file.transferTo(Paths.get(imagePth));
+
+                paymentDetails.setFolderPath(folderPath);
+                paymentDetails.setSliImgPath(imagePth);
+
+            }else {
+
+                deleteExistingImg(paymentDetails.getSliImgPath());
+                String imagePth = paymentDetails.getFolderPath() + "\\" + file.getOriginalFilename();
+                file.transferTo(Paths.get(imagePth));
+
+                paymentDetails.setSliImgPath(imagePth);
+            }
+
+            Package aPackage = packageRepository.findByPackageId(packageId).get();
+            aPackage.setPaidValue("Pending");
+            paymentDetails.setStatus("Pending");
+            packageRepository.save(aPackage);
+            paymentDetailsRepository.save(paymentDetails);
+
+        }catch (IOException e){
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void confirmPayment(String packageId) {
+
+        Optional<PaymentDetails> byPackageId = paymentDetailsRepository.findByPackageId(packageId);
+        if (byPackageId.isEmpty())
+            throw new NotFoundException(packageId + " Package is doesn't exist !");
+
+        PaymentDetails paymentDetails = byPackageId.get();
+        paymentDetails.setStatus("Payed");
+
+        Package aPackage = packageRepository.findByPackageId(packageId).get();
+        aPackage.setPaidValue("Payed");
+
+        packageRepository.save(aPackage);
+        paymentDetailsRepository.save(paymentDetails);
+    }
+
+    @Override
+    public List<PaymentDetailsDTO> getPending() {
+
+        return paymentDetailsRepository
+                .getAllPayment("Pending")
+                .stream()
+                .map(this::getDTO)
+                .toList();
+    }
+
+    private PaymentDetailsDTO getDTO(PaymentDetails paymentDetails) {
+
+        PaymentDetailsDTO detailsDTO = modelMapper.map(paymentDetails, PaymentDetailsDTO.class);
+
+        try {
+
+            byte[] slipImg = Files.readAllBytes(new File(paymentDetails.getSliImgPath()).toPath());
+
+            if (slipImg.length == 0)
+                throw new NotFoundException(paymentDetails.getPackageId() +" Slip image not found !");
+
+            detailsDTO.setPaymentSlip(slipImg);
+            return detailsDTO;
+
+        }catch (IOException e){
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     private boolean isFree(List<GuideDatesDTO> dateList, String startDate, String endDate) {
@@ -217,7 +351,7 @@ public class PackageServiceImpl implements PackageService {
             dateList.forEach(guideDatesDTO -> {
 
                 System.out.println((sdate.toInstant().isAfter(guideDatesDTO.getStartDate().toInstant()) &&
-                         sdate.toInstant().isBefore(guideDatesDTO.getEndDate().toInstant()))
+                        sdate.toInstant().isBefore(guideDatesDTO.getEndDate().toInstant()))
                         ||
                         (edate.toInstant().isAfter(guideDatesDTO.getStartDate().toInstant())
                                 && edate.toInstant().isBefore(guideDatesDTO.getEndDate().toInstant())));

@@ -55,7 +55,7 @@ public class Package implements SuperEntity{
     private Double packageValue;
 
     @Column(nullable = false)
-    private Double paidValue;
+    private String paidValue;
 
     @Column(nullable = false)
     private Date startDate;

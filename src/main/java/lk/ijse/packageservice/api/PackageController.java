@@ -6,6 +6,7 @@ import lk.ijse.packageservice.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -178,4 +179,39 @@ public class PackageController {
                 .build();
     }
 
+    @PutMapping(value = "/payment",produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseUtil addPayment(@RequestParam("slip")MultipartFile file,
+                                   @RequestParam("packageId") String packageId){
+
+        System.out.println(file.getOriginalFilename());
+        packageService.addPaymentSlip(packageId, file);
+        return ResponseUtil
+                .builder()
+                .code(200)
+                .message("Payment add successful")
+                .build();
+    }
+
+    @PutMapping(value = "/confirm", params = "packageId", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseUtil confirmPayment(@RequestParam String packageId){
+
+        packageService.confirmPayment(packageId);
+        return ResponseUtil
+                .builder()
+                .code(200)
+                .message("Package payment add successful")
+                .build();
+    }
+
+    @GetMapping(value = "/getPending", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseUtil getPendingPayment(){
+
+
+        return ResponseUtil
+                .builder()
+                .code(200)
+                .data(packageService.getPending())
+                .message("Package payment add successful")
+                .build();
+    }
 }

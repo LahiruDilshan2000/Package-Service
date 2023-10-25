@@ -25,4 +25,6 @@ public interface PackageRepository extends JpaRepository<Package, String> {
 
 
     List<Package> findAllByUserNic(String nic, Pageable pageable);
+
+    Optional<Package> findByPackageId(String packageId);
 }

@@ -3,9 +3,12 @@ package lk.ijse.packageservice.service.custom;
 
 import lk.ijse.packageservice.dto.GuideDTO;
 import lk.ijse.packageservice.dto.PackageDTO;
+import lk.ijse.packageservice.dto.PaymentDetailsDTO;
 import lk.ijse.packageservice.service.SuperService;
 import lk.ijse.packageservice.util.ResponseUtil;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -45,4 +48,10 @@ public interface PackageService extends SuperService {
     List<GuideDTO> getFreeGuides(String startDate, String endDate);
 
     List<PackageDTO> getPackageByUserNic(Integer page, Integer count, String nic);
+
+    void addPaymentSlip(String packageId, MultipartFile file);
+
+    void confirmPayment(String packageId);
+
+    List<PaymentDetailsDTO> getPending();
 }

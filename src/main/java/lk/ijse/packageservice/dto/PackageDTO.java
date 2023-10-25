@@ -39,7 +39,7 @@ public class PackageDTO {
 
     private Double packageValue;
 
-    private Double paidValue;
+    private String paidValue;
 
     private Date startDate;
 
