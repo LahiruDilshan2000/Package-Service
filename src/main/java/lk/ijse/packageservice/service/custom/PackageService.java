@@ -53,5 +53,11 @@ public interface PackageService extends SuperService {
 
     void confirmPayment(String packageId);
 
+    void rejectPayment(String packageId);
+
     List<PaymentDetailsDTO> getPending();
+
+    PaymentDetailsDTO getPendingPaymentByPackageId(String packageId);
+
+    List<PackageDTO> getAllPackages();
 }

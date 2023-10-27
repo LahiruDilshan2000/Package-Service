@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author Lahiru Dilshan
@@ -199,19 +200,47 @@ public class PackageController {
         return ResponseUtil
                 .builder()
                 .code(200)
-                .message("Package payment add successful")
+                .message("Package payment confirm successful")
+                .build();
+    }
+
+    @PutMapping(value = "/reject", params = "packageId", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseUtil rejectPayment(@RequestParam String packageId){
+
+        packageService.rejectPayment(packageId);
+        return ResponseUtil
+                .builder()
+                .code(200)
+                .message("Package payment rejected successful")
                 .build();
     }
 
     @GetMapping(value = "/getPending", produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getPendingPayment(){
+    public ResponseUtil getPendingAllPayment(){
 
 
         return ResponseUtil
                 .builder()
                 .code(200)
                 .data(packageService.getPending())
-                .message("Package payment add successful")
+                .message("All pending payment getting successful")
                 .build();
+    }
+
+    @GetMapping(value = "/getPendingOne", params =  "packageId",produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseUtil getPendingPayment(@RequestParam String packageId){
+
+        return ResponseUtil
+                .builder()
+                .code(200)
+                .data(packageService.getPendingPaymentByPackageId(packageId))
+                .message("Selected payment getting successful")
+                .build();
+    }
+
+    @GetMapping(value = "/getAllPackages", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public List<PackageDTO> getAllPackages(){
+
+        return packageService.getAllPackages();
     }
 }

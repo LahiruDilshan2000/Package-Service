@@ -260,7 +260,7 @@ public class PackageServiceImpl implements PackageService {
 
             PaymentDetails paymentDetails = byPackageId.get();
 
-            if (paymentDetails.getSliImgPath() == null) {
+            if (paymentDetails.getFolderPath() == null) {
 
                 String folderPath = mainPath + UUID.randomUUID();
                 File pathFile = new File(folderPath);
@@ -304,7 +304,24 @@ public class PackageServiceImpl implements PackageService {
         paymentDetails.setStatus("Payed");
 
         Package aPackage = packageRepository.findByPackageId(packageId).get();
-        aPackage.setPaidValue("Payed");
+        aPackage.setPaidValue(String.valueOf(aPackage.getPackageValue()));
+
+        packageRepository.save(aPackage);
+        paymentDetailsRepository.save(paymentDetails);
+    }
+
+    @Override
+    public void rejectPayment(String packageId) {
+
+        Optional<PaymentDetails> byPackageId = paymentDetailsRepository.findByPackageId(packageId);
+        if (byPackageId.isEmpty())
+            throw new NotFoundException(packageId + " Package is doesn't exist !");
+
+        PaymentDetails paymentDetails = byPackageId.get();
+        paymentDetails.setStatus("Not Payed");
+
+        Package aPackage = packageRepository.findByPackageId(packageId).get();
+        aPackage.setPaidValue("Not Payed");
 
         packageRepository.save(aPackage);
         paymentDetailsRepository.save(paymentDetails);
@@ -318,6 +335,23 @@ public class PackageServiceImpl implements PackageService {
                 .stream()
                 .map(this::getDTO)
                 .toList();
+    }
+
+    @Override
+    public PaymentDetailsDTO getPendingPaymentByPackageId(String packageId) {
+
+        Optional<PaymentDetails> byPackageId = paymentDetailsRepository.findByPackageId(packageId);
+
+        if (byPackageId.isEmpty())
+            throw new NotFoundException(packageId + " Package doesn't exist !");
+
+        return getDTO(byPackageId.get());
+    }
+
+    @Override
+    public List<PackageDTO> getAllPackages() {
+
+        return modelMapper.map(packageRepository.findAll(), new TypeToken<List<PackageDTO>>(){}.getType());
     }
 
     private PaymentDetailsDTO getDTO(PaymentDetails paymentDetails) {
