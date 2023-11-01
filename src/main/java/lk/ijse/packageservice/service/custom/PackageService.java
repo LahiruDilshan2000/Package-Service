@@ -8,7 +8,6 @@ import lk.ijse.packageservice.service.SuperService;
 import lk.ijse.packageservice.util.ResponseUtil;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -60,4 +59,6 @@ public interface PackageService extends SuperService {
     PaymentDetailsDTO getPendingPaymentByPackageId(String packageId);
 
     List<PackageDTO> getAllPackages();
+
+    List<PackageDTO> searchByText(String text);
 }

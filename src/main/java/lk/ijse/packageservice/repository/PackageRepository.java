@@ -27,4 +27,14 @@ public interface PackageRepository extends JpaRepository<Package, String> {
     List<Package> findAllByUserNic(String nic, Pageable pageable);
 
     Optional<Package> findByPackageId(String packageId);
+
+    @Query(value = "select p from Package p where p.packageId like ?1 " +
+            "or p.packageCategory like ?2 " +
+            "or p.userNic like ?3 " +
+            "or p.hotelName like ?4 " +
+            "or p.contact like ?5 " +
+            "or p.email like ?6 " +
+            "or p.paidValue like  ?7 " +
+            "or p.withPetOrNo like ?8")
+    List<Package> searchByText(String t1, String t2, String t3, String t4, String t5, String t6, String t7, String t8);
 }

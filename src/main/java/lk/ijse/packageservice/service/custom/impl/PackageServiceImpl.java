@@ -354,6 +354,17 @@ public class PackageServiceImpl implements PackageService {
         return modelMapper.map(packageRepository.findAll(), new TypeToken<List<PackageDTO>>(){}.getType());
     }
 
+    @Override
+    public List<PackageDTO> searchByText(String text) {
+
+        text = "%" + text + "%";
+
+        return modelMapper
+                .map(packageRepository.searchByText(text, text, text, text, text, text, text, text),
+                        new TypeToken<List<PackageDTO>>() {
+                        }.getType());
+    }
+
     private PaymentDetailsDTO getDTO(PaymentDetails paymentDetails) {
 
         PaymentDetailsDTO detailsDTO = modelMapper.map(paymentDetails, PaymentDetailsDTO.class);

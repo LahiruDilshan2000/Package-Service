@@ -2,6 +2,8 @@ package lk.ijse.packageservice.advisor;
 
 import lk.ijse.packageservice.util.ResponseUtil;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -23,6 +25,22 @@ public class AppWideExceptionHandler {
                 .builder()
                 .code(500)
                 .message(e.getMessage())
+                .build();
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler({MethodArgumentNotValidException.class})
+    public ResponseUtil handleInvalidArgument(MethodArgumentNotValidException e){
+
+        StringBuilder message = new StringBuilder();
+
+        for (FieldError error: e.getFieldErrors()){
+            message.append(error.getDefaultMessage()).append("\n");
+        }
+        return ResponseUtil
+                .builder()
+                .code(500)
+                .message(message.toString())
                 .build();
     }
 }
