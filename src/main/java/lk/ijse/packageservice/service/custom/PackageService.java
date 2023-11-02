@@ -40,9 +40,9 @@ public interface PackageService extends SuperService {
 
     ResponseUtil getGuideById(Integer guideId);
 
-    ResponseUtil getAllUsers();
+    ResponseUtil getAllUsers(String header);
 
-    ResponseUtil getUserByNic(String nic);
+    ResponseUtil getUserByNic(String nic, String token);
 
     List<GuideDTO> getFreeGuides(String startDate, String endDate);
 

@@ -1,7 +1,6 @@
 package lk.ijse.packageservice.service.custom.impl;
 
 import lk.ijse.packageservice.dto.GuideDTO;
-import lk.ijse.packageservice.dto.GuideDatesDTO;
 import lk.ijse.packageservice.dto.PackageDTO;
 import lk.ijse.packageservice.dto.PaymentDetailsDTO;
 import lk.ijse.packageservice.entity.Package;
@@ -30,6 +29,8 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -132,12 +133,16 @@ public class PackageServiceImpl implements PackageService {
             throw new NotFoundException(packageId + " Package doesn't exist");
 
         PaymentDetails paymentDetails = paymentDetailsRepository.findByPackageId(packageId).get();
-        deleteExistingImg(paymentDetails.getSliImgPath());
 
-        File folder = new File(paymentDetails.getFolderPath());
+        if (paymentDetails.getFolderPath() != null){
 
-        if(!folder.delete())
-            throw new RuntimeException("Payment slip directory delete failed !");
+            deleteExistingImg(paymentDetails.getSliImgPath());
+
+            File folder = new File(paymentDetails.getFolderPath());
+
+            if (!folder.delete())
+                throw new RuntimeException("Payment slip directory delete failed !");
+        }
 
         packageRepository.deleteById(packageId);
         paymentDetailsRepository.deleteByPackageId(packageId);
@@ -147,11 +152,11 @@ public class PackageServiceImpl implements PackageService {
 
         File oldFile = new File(imagePath);
 
-        if (!oldFile.exists()){
+        if (!oldFile.exists()) {
             throw new NotFoundException("Existing payment slip is not found !");
         }
 
-        if(!oldFile.delete())
+        if (!oldFile.delete())
             throw new RuntimeException("Existing payment slip delete failed !");
     }
 
@@ -201,15 +206,15 @@ public class PackageServiceImpl implements PackageService {
     }
 
     @Override
-    public ResponseUtil getAllUsers() {
+    public ResponseUtil getAllUsers(String token) {
 
-        return user.getAll();
+        return user.getAll(token);
     }
 
     @Override
-    public ResponseUtil getUserByNic(String nic) {
+    public ResponseUtil getUserByNic(String nic, String token) {
 
-        return user.findByNic(nic);
+        return user.findByNic(token, nic);
     }
 
     @Override
@@ -219,22 +224,22 @@ public class PackageServiceImpl implements PackageService {
     }
 
     @Override
-    public List<GuideDTO> getFreeGuides(String startDate, String endDate) {
+    public List<GuideDTO> getFreeGuides(String startDate, String endDaten) {
 
-        List<GuideDTO> all = guide.getAll();
-        List<GuideDTO> freeList = new ArrayList<>();
+        return guide.getAll();
+
+        /*List<GuideDTO> freeList = new ArrayList<>();
 
         all.forEach(guideDTO -> {
-            if (!guideDTO.getDatesList().isEmpty()) {
-                if (isFree(guideDTO.getDatesList(), startDate, endDate)) {
-                    freeList.add(guideDTO);
-                    System.out.println("added");
-                }
+            if (guideDTO.getDatesList().isEmpty()) {
+                freeList.add(guideDTO);
+
+            } else if (isFree(guideDTO.getDatesList(), startDate, endDate)) {
+                freeList.add(guideDTO);
             }
+
         });
-
-
-        return freeList;
+        return freeList;*/
     }
 
     @Override
@@ -273,7 +278,7 @@ public class PackageServiceImpl implements PackageService {
                 paymentDetails.setFolderPath(folderPath);
                 paymentDetails.setSliImgPath(imagePth);
 
-            }else {
+            } else {
 
                 deleteExistingImg(paymentDetails.getSliImgPath());
                 String imagePth = paymentDetails.getFolderPath() + "\\" + file.getOriginalFilename();
@@ -288,7 +293,7 @@ public class PackageServiceImpl implements PackageService {
             packageRepository.save(aPackage);
             paymentDetailsRepository.save(paymentDetails);
 
-        }catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -351,7 +356,8 @@ public class PackageServiceImpl implements PackageService {
     @Override
     public List<PackageDTO> getAllPackages() {
 
-        return modelMapper.map(packageRepository.findAll(), new TypeToken<List<PackageDTO>>(){}.getType());
+        return modelMapper.map(packageRepository.findAll(), new TypeToken<List<PackageDTO>>() {
+        }.getType());
     }
 
     @Override
@@ -374,42 +380,36 @@ public class PackageServiceImpl implements PackageService {
             byte[] slipImg = Files.readAllBytes(new File(paymentDetails.getSliImgPath()).toPath());
 
             if (slipImg.length == 0)
-                throw new NotFoundException(paymentDetails.getPackageId() +" Slip image not found !");
+                throw new NotFoundException(paymentDetails.getPackageId() + " Slip image not found !");
 
             detailsDTO.setPaymentSlip(slipImg);
             return detailsDTO;
 
-        }catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
     }
 
-    private boolean isFree(List<GuideDatesDTO> dateList, String startDate, String endDate) {
+    /*private boolean isFree(List<GuideDatesDTO> dateList, String startDate, String endDate) {
 
-        boolean isFree = false;
-        try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-            Date sdate = dateFormat.parse(startDate);
-            Date edate = dateFormat.parse(endDate);
-
-            dateList.forEach(guideDatesDTO -> {
-
-                System.out.println((sdate.toInstant().isAfter(guideDatesDTO.getStartDate().toInstant()) &&
-                        sdate.toInstant().isBefore(guideDatesDTO.getEndDate().toInstant()))
-                        ||
-                        (edate.toInstant().isAfter(guideDatesDTO.getStartDate().toInstant())
-                                && edate.toInstant().isBefore(guideDatesDTO.getEndDate().toInstant())));
+        LocalDate sDate = LocalDate.parse(startDate, formatter);
+        LocalDate eDate = LocalDate.parse(endDate, formatter);
 
 
-                //targetDate.isBefore(startDate) || targetDate.isAfter(endDate)
+        for (GuideDatesDTO guideDatesDTO : dateList) {
 
-            });
-            return true;
+            LocalDate guideSDate = guideDatesDTO.getStartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate guideEDate = guideDatesDTO.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-        } catch (
-                ParseException e) {
-            throw new RuntimeException(e);
+            if (!sDate.isBefore(guideSDate) && !sDate.isAfter(guideEDate) ||
+                    !eDate.isBefore(guideSDate) && !eDate.isAfter(guideEDate) ||
+                    !guideSDate.isBefore(sDate) && !guideSDate.isAfter(eDate) ||
+                    !guideEDate.isBefore(sDate) && !guideEDate.isAfter(eDate)) {
+                return false;
+            }
         }
-    }
+        return true;
+    }*/
 }

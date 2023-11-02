@@ -49,6 +49,4 @@ public class GuideDTO {
     private Double manDayValue;
 
     private List<byte[]> imageList;
-
-    private List<GuideDatesDTO> datesList;
 }

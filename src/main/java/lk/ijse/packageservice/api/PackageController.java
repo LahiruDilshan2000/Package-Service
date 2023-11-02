@@ -1,11 +1,10 @@
 package lk.ijse.packageservice.api;
 
 import lk.ijse.packageservice.dto.PackageDTO;
-import lk.ijse.packageservice.entity.Role;
-import lk.ijse.packageservice.exception.UnauthorizedException;
 import lk.ijse.packageservice.service.custom.PackageService;
 import lk.ijse.packageservice.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,79 +27,59 @@ public class PackageController {
     @GetMapping(value = "/getVehicles", params = {"page", "count", "category"}, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseUtil getVehiclesByCategory(@RequestParam Integer page,
                                               @RequestParam Integer count,
-                                              @RequestParam String category,
-                                              @RequestHeader("X-ROLE") Role role) {
+                                              @RequestParam String category) {
 
-        if (role.equals(Role.ADMIN_PACKAGE) || role.equals(Role.USER))
             return packageService.getVehicles(page, count, category);
-
-        throw new UnauthorizedException("Un authorized access to application");
 
     }
 
     @GetMapping(value = "/getHotels", params = {"page", "count", "category"}, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseUtil getHotelsByCategory(@RequestParam Integer page,
                                             @RequestParam Integer count,
-                                            @RequestParam Integer category,
-                                            @RequestHeader("X-ROLE") Role role) {
+                                            @RequestParam Integer category) {
 
-        if (role.equals(Role.ADMIN_PACKAGE) || role.equals(Role.USER))
             return packageService.getHotels(page, count, category);
 
-        throw new UnauthorizedException("Un authorized access to application");
     }
 
     @GetMapping(value = "/getHotelById", params = {"hotelId"}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getHotelsById(@RequestParam Integer hotelId, @RequestHeader("X-ROLE") Role role) {
+    public ResponseUtil getHotelsById(@RequestParam Integer hotelId) {
 
-        if (role.equals(Role.ADMIN_PACKAGE) || role.equals(Role.USER))
             return packageService.getHotelById(hotelId);
 
-        throw new UnauthorizedException("Un authorized access to application");
     }
 
     @GetMapping(value = "/getVehicleById", params = {"vehicleId"}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getVehicleById(@RequestParam Integer vehicleId, @RequestHeader("X-ROLE") Role role) {
+    public ResponseUtil getVehicleById(@RequestParam Integer vehicleId) {
 
-        if (role.equals(Role.ADMIN_PACKAGE) || role.equals(Role.USER))
             return packageService.getVehicleById(vehicleId);
 
-        throw new UnauthorizedException("Un authorized access to application");
     }
 
     @GetMapping(value = "/getGuideById", params = {"guideId"}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getGuideById(@RequestParam Integer guideId, @RequestHeader("X-ROLE") Role role) {
+    public ResponseUtil getGuideById(@RequestParam Integer guideId) {
 
-        if (role.equals(Role.ADMIN_PACKAGE) || role.equals(Role.USER))
             return packageService.getGuideById(guideId);
 
-        throw new UnauthorizedException("Un authorized access to application");
     }
 
     @GetMapping(value = "/getUsers", produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getAllUsers(@RequestHeader("X-ROLE") Role role) {
+    public ResponseUtil getAllUsers(@RequestHeader(HttpHeaders.AUTHORIZATION) String header) {
 
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
-
-        return packageService.getAllUsers();
+        return packageService.getAllUsers(header);
 
     }
 
     @GetMapping(value = "/getUserByNic", params = {"nic"}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getUserByNic(@RequestParam String nic, @RequestHeader("X-ROLE") Role role) {
+    public ResponseUtil getUserByNic(@RequestParam String nic, @RequestHeader(HttpHeaders.AUTHORIZATION) String header) {
 
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
-
-        return packageService.getUserByNic(nic);
+        return packageService.getUserByNic(nic, header);
 
     }
 
     @GetMapping(value = "/getNextPk")
-    public ResponseUtil getNextId(@RequestHeader("X-ROLE") Role role) {
+    public ResponseUtil getNextId() {
 
-        if (role.equals(Role.ADMIN_PACKAGE) || role.equals(Role.USER))
             return ResponseUtil
                     .builder()
                     .code(200)
@@ -108,13 +87,11 @@ public class PackageController {
                     .message("Next Id get successful")
                     .build();
 
-        throw new UnauthorizedException("Un authorized access to application");
     }
 
-    @PostMapping(consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil savePackage(@RequestBody PackageDTO packageDTO, @RequestHeader("X-ROLE") Role role) {
+    @PostMapping(value = "/post", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseUtil savePackage(@RequestBody PackageDTO packageDTO) {
 
-        if (role.equals(Role.ADMIN_PACKAGE) || role.equals(Role.USER))
             return ResponseUtil
                     .builder()
                     .code(200)
@@ -122,14 +99,10 @@ public class PackageController {
                     .message("Package save successful")
                     .build();
 
-        throw new UnauthorizedException("Un authorized access to application");
     }
 
     @PutMapping(consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil updatePackage(@RequestBody PackageDTO packageDTO, @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil updatePackage(@RequestBody PackageDTO packageDTO) {
 
         return ResponseUtil
                 .builder()
@@ -140,10 +113,7 @@ public class PackageController {
     }
 
     @PutMapping(value = "/updateUserPackage", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil updateUserPackage(@RequestBody PackageDTO packageDTO, @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.USER))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil updateUserPackage(@RequestBody PackageDTO packageDTO) {
 
         return ResponseUtil
                 .builder()
@@ -154,10 +124,7 @@ public class PackageController {
     }
 
     @DeleteMapping(params = {"packageId"}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil updatePackage(@RequestParam String packageId, @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil deletePackage(@RequestParam String packageId) {
 
         packageService.deletePackage(packageId);
         return ResponseUtil
@@ -168,10 +135,7 @@ public class PackageController {
     }
 
     @GetMapping(params = {"packageId"}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getById(@RequestParam String packageId, @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil getById(@RequestParam String packageId) {
 
         return ResponseUtil
                 .builder()
@@ -183,11 +147,7 @@ public class PackageController {
 
     @GetMapping(value = "/getAll", params = {"page", "count"}, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseUtil getPackagePageable(@RequestParam Integer page,
-                                           @RequestParam Integer count,
-                                           @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+                                           @RequestParam Integer count) {
 
         return ResponseUtil
                 .builder()
@@ -199,28 +159,20 @@ public class PackageController {
 
     @GetMapping(value = "/getFreeGuide", params = {"startDate", "endDate"}, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseUtil GetFreeGuide(@RequestParam String startDate,
-                                     @RequestParam String endDate,
-                                     @RequestHeader("X-ROLE") Role role) {
+                                     @RequestParam String endDate) {
 
-        if (role.equals(Role.ADMIN_PACKAGE) || role.equals(Role.USER))
             return ResponseUtil
                     .builder()
                     .code(200)
                     .data(packageService.getFreeGuides(startDate, endDate))
                     .message("Package getting all successful")
                     .build();
-
-        throw new UnauthorizedException("Un authorized access to application");
     }
 
     @GetMapping(value = "/getPackageByNic", params = {"page", "count", "nic"}, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseUtil getPackagesByUserNic(@RequestParam Integer page,
                                              @RequestParam Integer count,
-                                             @RequestParam String nic,
-                                             @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.USER))
-            throw new UnauthorizedException("Un authorized access to application");
+                                             @RequestParam String nic) {
 
         return ResponseUtil
                 .builder()
@@ -232,11 +184,7 @@ public class PackageController {
 
     @PutMapping(value = "/payment", produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseUtil addPayment(@RequestPart("slip") MultipartFile file,
-                                   @RequestPart("packageId") String packageId,
-                                   @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.USER))
-            throw new UnauthorizedException("Un authorized access to application");
+                                   @RequestPart("packageId") String packageId) {
 
         packageService.addPaymentSlip(packageId, file);
         return ResponseUtil
@@ -247,10 +195,7 @@ public class PackageController {
     }
 
     @PutMapping(value = "/confirm", params = "packageId", produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil confirmPayment(@RequestParam String packageId, @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil confirmPayment(@RequestParam String packageId) {
 
         packageService.confirmPayment(packageId);
         return ResponseUtil
@@ -261,10 +206,7 @@ public class PackageController {
     }
 
     @PutMapping(value = "/reject", params = "packageId", produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil rejectPayment(@RequestParam String packageId, @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil rejectPayment(@RequestParam String packageId) {
 
         packageService.rejectPayment(packageId);
         return ResponseUtil
@@ -275,11 +217,7 @@ public class PackageController {
     }
 
     @GetMapping(value = "/getPending", produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getPendingAllPayment(@RequestHeader("X-ROLE") Role role) {
-
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil getPendingAllPayment() {
 
         return ResponseUtil
                 .builder()
@@ -290,10 +228,7 @@ public class PackageController {
     }
 
     @GetMapping(value = "/getPendingOne", params = "packageId", produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil getPendingPayment(@RequestParam String packageId, @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil getPendingPayment(@RequestParam String packageId) {
 
         return ResponseUtil
                 .builder()
@@ -310,10 +245,7 @@ public class PackageController {
     }
 
     @GetMapping(value = "/search", params = {"text"}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseUtil searchByText(@RequestParam String text, @RequestHeader("X-ROLE") Role role) {
-
-        if (!role.equals(Role.ADMIN_PACKAGE))
-            throw new UnauthorizedException("Un authorized access to application");
+    public ResponseUtil searchByText(@RequestParam String text) {
 
         return ResponseUtil
                 .builder()
